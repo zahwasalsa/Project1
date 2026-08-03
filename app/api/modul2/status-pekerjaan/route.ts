@@ -1,4 +1,3 @@
-// app/api/modul2/status-pekerjaan/route.ts
 import { supabase } from '@/app/lib/supabase'
 import { NextResponse } from 'next/server'
 
@@ -9,7 +8,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'mahasiswa_id dan status_pekerjaan wajib diisi' }, { status: 400 })
   }
 
-  // tentukan status_modul2 awal berdasarkan jalur
   const statusAwal =
     status_pekerjaan === 'belum_bekerja' ? 'proses_hiring' : 'menunggu_verifikasi_bukti_kerja'
 
