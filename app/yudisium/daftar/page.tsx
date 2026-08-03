@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 export default function DaftarYudisium() {
+  const router = useRouter();
   const [nim, setNim] = useState("");
   const [namaLengkap, setNamaLengkap] = useState("");
   const [programStudi, setProgramStudi] = useState("");
   const [fakultas, setFakultas] = useState("");
-  const [email, setEmail] = useState("");
   const [noWhatsapp, setNoWhatsapp] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,18 +19,27 @@ export default function DaftarYudisium() {
     setLoading(true);
     setMessage("Menyimpan data...");
 
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData.user) {
+      setMessage("❌ Kamu harus login dulu.");
+      setLoading(false);
+      return;
+    }
+
+    const userEmail = userData.user.email;
+
+    // Update data mahasiswa yang SUDAH ADA (dari waktu register), bukan insert baru
     const { data: mahasiswaData, error: mahasiswaError } = await supabase
       .from("Mahasiswa")
-      .insert([
-        {
-          nim,
-          nama_lengkap: namaLengkap,
-          program_studi: programStudi,
-          fakultas,
-          email,
-          no_whatsapp: noWhatsapp,
-        },
-      ])
+      .update({
+        nim,
+        nama_lengkap: namaLengkap,
+        program_studi: programStudi,
+        fakultas,
+        no_whatsapp: noWhatsapp,
+      })
+      .eq("email", userEmail)
       .select()
       .single();
 
@@ -42,7 +52,7 @@ export default function DaftarYudisium() {
     const { error: yudisiumError } = await supabase.from("yudisium").insert([
       {
         mahasiswa_id: mahasiswaData.id,
-        status: "Menunggu Verifikasi",
+        status: "pending",
       },
     ]);
 
@@ -53,13 +63,7 @@ export default function DaftarYudisium() {
     }
 
     setMessage("✅ Pendaftaran yudisium berhasil dikirim!");
-    setNim("");
-    setNamaLengkap("");
-    setProgramStudi("");
-    setFakultas("");
-    setEmail("");
-    setNoWhatsapp("");
-    setLoading(false);
+    router.push("/yudisium/status");
   }
 
   const inputClass =
@@ -104,14 +108,6 @@ export default function DaftarYudisium() {
           placeholder="Fakultas"
           value={fakultas}
           onChange={(e) => setFakultas(e.target.value)}
-          className={inputClass}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
           required
         />

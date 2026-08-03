@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -21,10 +23,11 @@ export default function Login() {
 
     if (error) {
       setMessage("❌ " + error.message);
+      setLoading(false);
     } else {
       setMessage("✅ Login berhasil!");
+      router.push("/yudisium/status");
     }
-    setLoading(false);
   }
 
   const inputClass =
