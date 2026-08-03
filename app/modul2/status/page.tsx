@@ -39,75 +39,92 @@ export default function StatusPage() {
     menunggu_pengisian_tracer: 'Menunggu Pengisian Tracer Study',
     menunggu_verifikasi_tracer: 'Menunggu Verifikasi Tracer & Hiring',
     revisi_tracer: 'Revisi Tracer & Hiring',
-    lolos_tracer_hiring: 'Lolos Tracer & Hiring ✅',
+    lolos_tracer_hiring: 'Lolos Tracer & Hiring',
   }
 
-  const statusColor = (status: string) => {
-    if (status === 'lolos_tracer_hiring') return 'limegreen'
-    if (status?.startsWith('revisi')) return 'orangered'
-    return 'dodgerblue'
+  const statusBadge = (status: string) => {
+    if (status === 'lolos_tracer_hiring')
+      return 'bg-green-950 text-green-400 border border-green-800'
+    if (status?.startsWith('revisi'))
+      return 'bg-red-950 text-red-400 border border-red-800'
+    return 'bg-blue-950 text-blue-400 border border-blue-800'
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: '40px auto', fontFamily: 'sans-serif' }}>
-      <h1>Status Modul 2 — Hiring & Tracer</h1>
-      <p>Cek status progres Campus Hiring & Tracer Study kamu di sini.</p>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-lg bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-800">
+        <h1 className="text-2xl font-bold text-white mb-1">Status Modul 2 — Hiring & Tracer</h1>
+        <p className="text-gray-400 text-sm mb-6">
+          Cek status progres Campus Hiring & Tracer Study kamu di sini.
+        </p>
 
-      <form onSubmit={handleCekStatus} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <input
-          type="number"
-          placeholder="Mahasiswa ID"
-          value={mahasiswaId}
-          onChange={(e) => setMahasiswaId(e.target.value)}
-          required
-          style={{ flex: 1, padding: 8 }}
-        />
-        <button type="submit" disabled={loading} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          {loading ? 'Mencari...' : 'Cek Status'}
-        </button>
-      </form>
+        <form onSubmit={handleCekStatus} className="flex gap-2 mb-6">
+          <input
+            type="number"
+            placeholder="Mahasiswa ID"
+            value={mahasiswaId}
+            onChange={(e) => setMahasiswaId(e.target.value)}
+            required
+            className="flex-1 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium transition-colors"
+          >
+            {loading ? 'Mencari...' : 'Cek Status'}
+          </button>
+        </form>
 
-      {message && <p style={{ color: 'red' }}>{message}</p>}
+        {message && (
+          <p className="text-sm rounded-lg px-3 py-2 bg-red-950 text-red-400 border border-red-900">
+            {message}
+          </p>
+        )}
 
-      {statusData && (
-        <div style={{ border: '1px solid #444', borderRadius: 8, padding: 16 }}>
-          <h3>
-            Status:{' '}
-            <span style={{ color: statusColor(statusData.status_modul2) }}>
+        {statusData && (
+          <div className="border border-gray-800 rounded-xl p-5 bg-gray-950/50">
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusBadge(
+                statusData.status_modul2
+              )}`}
+            >
               {statusLabel[statusData.status_modul2] || statusData.status_modul2}
             </span>
-          </h3>
 
-          <table style={{ width: '100%', marginTop: 12, borderCollapse: 'collapse' }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: '6px 0', opacity: 0.7 }}>Status Pekerjaan</td>
-                <td>{statusData.status_pekerjaan || '-'}</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '6px 0', opacity: 0.7 }}>Jumlah Lamaran</td>
-                <td>
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span className="text-gray-400">Status Pekerjaan</span>
+                <span className="text-white">{statusData.status_pekerjaan || '-'}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span className="text-gray-400">Jumlah Lamaran</span>
+                <span className="text-white">
                   {statusData.jumlah_lamaran_terkirim} / {statusData.threshold_minimal}
-                </td>
-              </tr>
-              <tr>
-                <td style={{ padding: '6px 0', opacity: 0.7 }}>Bypass Admin</td>
-                <td>{statusData.is_bypass ? `Ya — ${statusData.bypass_alasan}` : 'Tidak'}</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '6px 0', opacity: 0.7 }}>Terakhir Diperbarui</td>
-                <td>{new Date(statusData.updated_at).toLocaleString('id-ID')}</td>
-              </tr>
-            </tbody>
-          </table>
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-gray-800 pb-2">
+                <span className="text-gray-400">Bypass Admin</span>
+                <span className="text-white">
+                  {statusData.is_bypass ? `Ya — ${statusData.bypass_alasan}` : 'Tidak'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Terakhir Diperbarui</span>
+                <span className="text-white">
+                  {new Date(statusData.updated_at).toLocaleString('id-ID')}
+                </span>
+              </div>
+            </div>
 
-          {statusData.status_modul2 === 'lolos_tracer_hiring' && (
-            <p style={{ color: 'limegreen', marginTop: 16 }}>
-              🎉 Selamat! Kamu sudah bisa lanjut ke Modul 3 — Wisuda.
-            </p>
-          )}
-        </div>
-      )}
+            {statusData.status_modul2 === 'lolos_tracer_hiring' && (
+              <p className="text-green-400 text-sm mt-4 text-center">
+                🎉 Selamat! Kamu sudah bisa lanjut ke Modul 3 — Wisuda.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
