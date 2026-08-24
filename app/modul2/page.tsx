@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type StatusPekerjaan = 'belum_bekerja' | 'sudah_bekerja'
 
@@ -23,6 +23,11 @@ export default function Modul2WizardPage() {
   const [tanggalMulaiKerja, setTanggalMulaiKerja] = useState('')
   const [jenisBukti, setJenisBukti] = useState('kontrak_kerja')
   const [file, setFile] = useState<File | null>(null)
+  // status verifikasi bukti kerja oleh admin: 'form' (belum upload/perlu upload ulang),
+  // 'menunggu' (sudah upload, menunggu admin), 'revisi' (admin minta upload ulang),
+  // 'terverifikasi' (admin sudah setujui, boleh lanjut ke Tracer Study)
+  const [buktiKerjaStatus, setBuktiKerjaStatus] = useState<'form' | 'menunggu' | 'revisi' | 'terverifikasi'>('form')
+  const [catatanBuktiKerja, setCatatanBuktiKerja] = useState('')
 
   // state tracer study
   const [kondisiSaatIni, setKondisiSaatIni] = useState('bekerja')
@@ -124,7 +129,10 @@ export default function Modul2WizardPage() {
       if (!res.ok) {
         setMessage(`Gagal: ${data.error}`)
       } else {
-        setStep(3)
+        // jangan langsung ke Tracer Study — tunggu admin verifikasi kelengkapan bukti kerja dulu
+        setBuktiKerjaStatus('menunggu')
+        setCatatanBuktiKerja('')
+        setMessage('')
       }
     } catch {
       setMessage('Terjadi kesalahan koneksi ke server.')
@@ -132,6 +140,31 @@ export default function Modul2WizardPage() {
       setLoading(false)
     }
   }
+
+  // ================= Cek Status Verifikasi Bukti Kerja =================
+  const cekStatusBuktiKerja = async () => {
+    if (!hiringTracerId) return
+    try {
+      const res = await fetch(`/api/modul2/bukti-kerja/status/${hiringTracerId}`)
+      const data = await res.json()
+      if (!res.ok) return
+      const validasi = data.data?.status_validasi as string | undefined
+      setCatatanBuktiKerja(data.data?.catatan_verifikasi || '')
+      if (validasi === 'valid') setBuktiKerjaStatus('terverifikasi')
+      else if (validasi === 'revisi') setBuktiKerjaStatus('revisi')
+      else setBuktiKerjaStatus('menunggu')
+    } catch {
+      // diamkan, biarkan user coba cek manual lagi
+    }
+  }
+
+  // auto-poll setiap 5 detik selama masih menunggu verifikasi bukti kerja
+  useEffect(() => {
+    if (step !== 2 || statusPekerjaan !== 'sudah_bekerja' || buktiKerjaStatus !== 'menunggu') return
+    const interval = setInterval(cekStatusBuktiKerja, 5000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, statusPekerjaan, buktiKerjaStatus, hiringTracerId])
 
   // ================= STEP 3: Tracer Study =================
   const submitTracerStudy = async () => {
@@ -177,7 +210,10 @@ export default function Modul2WizardPage() {
     proses_hiring: 'Proses Hiring (Belum Capai Threshold)',
     memenuhi_syarat_hiring: 'Memenuhi Syarat Hiring',
     menunggu_verifikasi_bukti_kerja: 'Menunggu Verifikasi Bukti Kerja',
+    revisi_bukti_kerja: 'Revisi Bukti Kerja',
+    bukti_kerja_terverifikasi: 'Bukti Kerja Terverifikasi',
     menunggu_verifikasi_tracer: 'Menunggu Verifikasi Tracer & Hiring',
+    revisi_tracer: 'Revisi Tracer & Hiring',
     lolos_tracer_hiring: 'Lolos Tracer & Hiring',
   }
 
@@ -282,10 +318,50 @@ export default function Modul2WizardPage() {
           </div>
         )}
 
-        {/* STEP 2B: Bukti Kerja */}
-        {step === 2 && statusPekerjaan === 'sudah_bekerja' && (
+        {/* STEP 2B: Bukti Kerja — menunggu verifikasi admin */}
+        {step === 2 && statusPekerjaan === 'sudah_bekerja' && buktiKerjaStatus === 'menunggu' && (
+          <div className="space-y-4 text-center">
+            <h1 className="text-xl font-bold text-white">Menunggu Verifikasi</h1>
+            <p className="text-gray-400 text-sm">
+              Bukti kerja kamu sudah diupload dan sedang ditinjau oleh Admin Karir/BKK.
+              Halaman ini akan otomatis memeriksa status setiap beberapa detik.
+            </p>
+            <button
+              onClick={cekStatusBuktiKerja}
+              className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              Cek Status Sekarang
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2B: Bukti Kerja — sudah terverifikasi, boleh lanjut */}
+        {step === 2 && statusPekerjaan === 'sudah_bekerja' && buktiKerjaStatus === 'terverifikasi' && (
+          <div className="space-y-4 text-center">
+            <h1 className="text-xl font-bold text-white">Bukti Kerja Terverifikasi ✓</h1>
+            <p className="text-gray-400 text-sm">
+              Bukti kerja kamu sudah divalidasi oleh Admin Karir/BKK. Kamu bisa lanjut mengisi Form Tracer Study.
+            </p>
+            <button
+              onClick={() => setStep(3)}
+              className="w-full py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium"
+            >
+              Lanjut ke Tracer Study →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2B: Bukti Kerja — form upload (awal atau setelah diminta revisi) */}
+        {step === 2 && statusPekerjaan === 'sudah_bekerja' && (buktiKerjaStatus === 'form' || buktiKerjaStatus === 'revisi') && (
           <div className="space-y-4">
             <h1 className="text-xl font-bold text-white">Upload Bukti Kerja</h1>
+            {buktiKerjaStatus === 'revisi' && (
+              <div className="rounded-lg bg-orange-950 border border-orange-900 text-orange-300 text-sm px-3 py-2">
+                <p className="font-medium">Admin meminta revisi.</p>
+                {catatanBuktiKerja && <p className="mt-1">{catatanBuktiKerja}</p>}
+                <p className="mt-1">Silakan lengkapi/upload ulang bukti kerja di bawah ini.</p>
+              </div>
+            )}
             <div>
               <label className={labelClass}>Nama Perusahaan</label>
               <input value={namaPerusahaan} onChange={(e) => setNamaPerusahaan(e.target.value)} className={inputClass} />

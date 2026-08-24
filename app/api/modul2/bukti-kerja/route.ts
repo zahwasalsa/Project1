@@ -2,6 +2,42 @@
 import { supabase } from '@/app/lib/supabase'
 import { NextResponse } from 'next/server'
 
+// GET /api/modul2/bukti-kerja?status=menunggu
+// Dipakai halaman admin untuk menampilkan daftar bukti kerja yang perlu diverifikasi.
+// Default hanya mengambil yang status_validasi = 'menunggu'.
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const status = searchParams.get('status') || 'menunggu'
+
+  const { data: buktiList, error: buktiError } = await supabase
+    .from('bukti_kerja')
+    .select('*')
+    .eq('status_validasi', status)
+    .order('id', { ascending: false })
+
+  if (buktiError) return NextResponse.json({ error: buktiError.message }, { status: 400 })
+  if (!buktiList || buktiList.length === 0) return NextResponse.json({ data: [] })
+
+  // ambil info mahasiswa terkait dari hiring_tracer (query terpisah, tanpa bergantung
+  // pada relasi FK otomatis Supabase, supaya tidak error kalau relasi belum dikonfigurasi)
+  const hiringTracerIds = [...new Set(buktiList.map((b) => b.hiring_tracer_id))]
+  const { data: tracerList, error: tracerError } = await supabase
+    .from('hiring_tracer')
+    .select('id, mahasiswa_id, status_pekerjaan, status_modul2')
+    .in('id', hiringTracerIds)
+
+  if (tracerError) return NextResponse.json({ error: tracerError.message }, { status: 400 })
+
+  const tracerMap = new Map((tracerList ?? []).map((t) => [t.id, t]))
+  const data = buktiList.map((b) => ({
+    ...b,
+    mahasiswa_id: tracerMap.get(b.hiring_tracer_id)?.mahasiswa_id ?? null,
+    status_modul2: tracerMap.get(b.hiring_tracer_id)?.status_modul2 ?? null,
+  }))
+
+  return NextResponse.json({ data })
+}
+
 export async function POST(req: Request) {
   const formData = await req.formData()
   const hiring_tracer_id = formData.get('hiring_tracer_id') as string
