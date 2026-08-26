@@ -8,6 +8,8 @@ export default function Modul2WizardPage() {
   const [mahasiswaId] = useState('1') // sementara manual, nanti dari session login
   const [hiringTracerId, setHiringTracerId] = useState<number | null>(null)
   const [statusPekerjaan, setStatusPekerjaan] = useState<StatusPekerjaan>('belum_bekerja')
+  const [periodeYudisium, setPeriodeYudisium] = useState('')
+  const [programStudi, setProgramStudi] = useState('')
 
   // state lamaran
   const [lowongan, setLowongan] = useState('')
@@ -54,7 +56,12 @@ export default function Modul2WizardPage() {
       const res = await fetch('/api/modul2/status-pekerjaan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mahasiswa_id: Number(mahasiswaId), status_pekerjaan: statusPekerjaan }),
+        body: JSON.stringify({
+          mahasiswa_id: Number(mahasiswaId),
+          status_pekerjaan: statusPekerjaan,
+          periode_yudisium: periodeYudisium || null,
+          program_studi: programStudi || null,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -247,6 +254,24 @@ export default function Modul2WizardPage() {
           <div className="space-y-4">
             <h1 className="text-xl font-bold text-white">Status Pekerjaan</h1>
             <p className="text-gray-400 text-sm">Pilih status pekerjaan kamu saat ini.</p>
+            <div>
+              <label className={labelClass}>Periode Yudisium</label>
+              <input
+                className={inputClass}
+                placeholder="mis. 2026-Genap"
+                value={periodeYudisium}
+                onChange={(e) => setPeriodeYudisium(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Program Studi</label>
+              <input
+                className={inputClass}
+                placeholder="mis. Teknik Informatika"
+                value={programStudi}
+                onChange={(e) => setProgramStudi(e.target.value)}
+              />
+            </div>
             <select
               value={statusPekerjaan}
               onChange={(e) => setStatusPekerjaan(e.target.value as StatusPekerjaan)}
