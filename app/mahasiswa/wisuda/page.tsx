@@ -60,9 +60,14 @@ export default function WisudaOverviewPage() {
     load();
   }, [load]);
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#101A33] text-sm text-[#9AA5C0]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F9FB] text-sm text-slate-400">
         Memuat progres wisuda…
       </div>
     );
@@ -95,232 +100,136 @@ export default function WisudaOverviewPage() {
     ? "revise"
     : "pending";
 
-  const completedCount = [step1, step2, step3].filter((s) => s === "done").length;
-  const finalStatus =
-    completedCount === 3
-      ? inAbsentia
-        ? "Wisuda In Absentia"
-        : "Terdaftar sebagai Wisudawan"
-      : null;
-
-  return (
-    <div className="min-h-screen bg-[#FAFAF8]">
-      <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap");
-        .font-display {
-          font-family: "Fraunces", ui-serif, Georgia, serif;
-        }
-        .font-body {
-          font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-        }
-      `}</style>
-
-      <section className="relative overflow-hidden bg-[#101A33] px-6 pb-16 pt-14 text-[#F5F1E6]">
-        <div
-          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #C9A227, transparent 70%)" }}
-        />
-        <div className="mx-auto max-w-2xl font-body">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#C9A227]">
-            SIAP Wisuda &middot; Modul 3
-          </p>
-
-          <h1 className="font-display mt-3 text-3xl font-semibold leading-tight sm:text-4xl">
-            {profile
-              ? `Selamat menempuh tahap akhir, ${profile.nama_lengkap.split(" ")[0]}.`
-              : "Selamat menempuh tahap akhir menuju wisuda."}
-          </h1>
-
-          {profile && (
-            <p className="mt-2 text-sm text-[#9AA5C0]">
-              {profile.nim} &middot; {profile.program_studi}
-              {profile.gelar ? ` &middot; ${profile.gelar}` : ""}
-            </p>
-          )}
-
-          {finalStatus && (
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-4 py-1.5 text-sm font-medium text-[#E9D27C]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E9D27C]" />
-              {finalStatus}
-            </div>
-          )}
-
-          <div className="mt-10">
-            <Sash step1={step1} step2={step2} step3={step3} inAbsentia={inAbsentia} />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto -mt-8 max-w-2xl px-6 pb-16 font-body">
-        <div className="space-y-3">
-          <StepCard
-            label="Tahap 1"
-            title="Kesediaan Wisuda"
-            desc="Konfirmasi apakah kamu akan hadir langsung atau in absentia."
-            state={step1}
-            onClick={() => router.push("/mahasiswa/wisuda/kesediaan")}
-          />
-          <StepCard
-            label="Tahap 2"
-            title="Pembayaran Wisuda"
-            desc="Unggah bukti pembayaran biaya wisuda untuk diverifikasi Admin Keuangan."
-            state={step2}
-            onClick={() => router.push("/mahasiswa/wisuda/pembayaran")}
-          />
-          <StepCard
-            label="Tahap 3"
-            title="Data Buku Wisuda"
-            desc={
-              inAbsentia
-                ? "Tidak wajib diisi karena kamu memilih in absentia."
-                : "Unggah foto formal & lengkapi data untuk dicetak di buku wisuda."
-            }
-            state={step3}
-            onClick={() => router.push("/mahasiswa/wisuda/buku-wisuda")}
-          />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Sash({
-  step1,
-  step2,
-  step3,
-  inAbsentia,
-}: {
-  step1: StepState;
-  step2: StepState;
-  step3: StepState;
-  inAbsentia: boolean;
-}) {
-  const items = [
-    { label: "Kesediaan", state: step1, icon: <IconHand /> },
-    { label: "Pembayaran", state: step2, icon: <IconReceipt /> },
-    { label: inAbsentia ? "Buku Wisuda (dilewati)" : "Buku Wisuda", state: step3, icon: <IconBook /> },
+  const steps = [
+    {
+      label: "Kesediaan Wisuda",
+      desc: "Konfirmasi hadir langsung atau in absentia.",
+      state: step1,
+      path: "/mahasiswa/wisuda/kesediaan",
+    },
+    {
+      label: "Pembayaran Wisuda",
+      desc: "Unggah bukti bayar untuk diverifikasi Admin Keuangan.",
+      state: step2,
+      path: "/mahasiswa/wisuda/pembayaran",
+    },
+    {
+      label: inAbsentia ? "Data Buku Wisuda (dilewati)" : "Data Buku Wisuda",
+      desc: inAbsentia
+        ? "Tidak wajib diisi karena kamu memilih in absentia."
+        : "Unggah foto formal & lengkapi data cetak.",
+      state: step3,
+      path: "/mahasiswa/wisuda/buku-wisuda",
+    },
   ];
 
   return (
-    <div className="flex items-center">
-      {items.map((item, i) => (
-        <div key={item.label} className="flex flex-1 items-center last:flex-none">
-          <div className="flex flex-col items-center gap-2">
-            <div
-              className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-colors ${
-                item.state === "done"
-                  ? "border-[#C9A227] bg-[#C9A227] text-[#101A33]"
-                  : item.state === "pending"
-                  ? "border-[#C9A227] text-[#C9A227]"
-                  : item.state === "revise"
-                  ? "border-[#E0755A] text-[#E0755A]"
-                  : item.state === "todo"
-                  ? "border-[#F5F1E6]/60 text-[#F5F1E6]/80"
-                  : "border-[#F5F1E6]/20 text-[#F5F1E6]/30"
-              }`}
-            >
-              {item.icon}
-            </div>
-            <span
-              className={`whitespace-nowrap text-[11px] font-medium ${
-                item.state === "locked" ? "text-[#F5F1E6]/30" : "text-[#F5F1E6]/85"
-              }`}
-            >
-              {item.label}
+    <div className="min-h-screen bg-[#F8F9FB] font-sans">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4">
+        <p className="text-sm text-slate-500">
+          <span className="text-slate-400">SIAP Wisuda</span>
+          <span className="mx-1.5 text-slate-300">/</span>
+          <span className="font-medium text-slate-700">Modul Wisuda</span>
+        </p>
+
+        <div className="flex items-center gap-3">
+          {profile && (
+            <span className="text-sm text-slate-500">
+              {profile.nama_lengkap} <span className="text-slate-300">&middot;</span> {profile.nim}
             </span>
-          </div>
-          {i < items.length - 1 && (
-            <div className="mx-2 mb-5 h-[2px] flex-1 rounded-full bg-[#F5F1E6]/15">
-              <div
-                className="h-full rounded-full bg-[#C9A227] transition-all"
-                style={{ width: item.state === "done" ? "100%" : "0%" }}
-              />
-            </div>
           )}
+          <button
+            onClick={handleLogout}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          >
+            Logout
+          </button>
         </div>
-      ))}
+      </div>
+
+      <div className="px-8 py-8">
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">Progres Wisuda</h1>
+            {profile ? (
+              <p className="mt-1 text-sm text-slate-500">
+                {profile.nama_lengkap} &middot; {profile.nim} &middot; {profile.program_studi}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-slate-500">Lengkapi 3 tahap berikut sampai selesai.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/60 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <th className="px-6 py-3">Tahap</th>
+                <th className="px-6 py-3">Deskripsi</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {steps.map((s, i) => (
+                <tr key={s.label} className={i !== steps.length - 1 ? "border-b border-slate-100" : ""}>
+                  <td className="px-6 py-4 font-medium text-slate-900">
+                    <span className="mr-2 text-xs text-slate-400">{i + 1}.</span>
+                    {s.label}
+                  </td>
+                  <td className="px-6 py-4 text-slate-500">{s.desc}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge state={s.state} />
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      disabled={s.state === "locked"}
+                      onClick={() => router.push(s.path)}
+                      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                        s.state === "locked"
+                          ? "cursor-not-allowed border-slate-200 text-slate-300"
+                          : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                      }`}
+                    >
+                      {s.state === "done" ? "Lihat" : s.state === "locked" ? "Terkunci" : "Lanjut"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
 
-const STATE_LABEL: Record<StepState, string> = {
-  locked: "Terkunci",
-  todo: "Belum diisi",
-  pending: "Menunggu verifikasi",
-  revise: "Perlu revisi",
-  done: "Selesai",
-};
-
-function StepCard({
-  label,
-  title,
-  desc,
-  state,
-  onClick,
-}: {
-  label: string;
-  title: string;
-  desc: string;
-  state: StepState;
-  onClick: () => void;
-}) {
-  const locked = state === "locked";
-
-  const badgeClass =
-    state === "done"
-      ? "bg-[#101A33]/5 text-[#101A33] ring-1 ring-[#C9A227]/50"
-      : state === "pending"
-      ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-      : state === "revise"
-      ? "bg-red-50 text-red-700 ring-1 ring-red-200"
-      : state === "todo"
-      ? "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-      : "bg-slate-50 text-slate-400 ring-1 ring-slate-100";
-
+function StatusBadge({ state }: { state: StepState }) {
+  const map: Record<StepState, { label: string; className: string }> = {
+    locked: { label: "Terkunci", className: "bg-slate-100 text-slate-400" },
+    todo: { label: "Belum diisi", className: "bg-slate-100 text-slate-600" },
+    pending: { label: "Menunggu verifikasi", className: "bg-amber-50 text-amber-700" },
+    revise: { label: "Perlu revisi", className: "bg-red-50 text-red-700" },
+    done: { label: "Selesai", className: "bg-emerald-50 text-emerald-700" },
+  };
+  const { label, className } = map[state];
   return (
-    <button
-      onClick={locked ? undefined : onClick}
-      disabled={locked}
-      className={`flex w-full items-center gap-4 rounded-2xl border bg-white px-5 py-4 text-left shadow-sm transition ${
-        locked ? "cursor-not-allowed border-slate-100 opacity-60" : "border-slate-200 hover:border-[#C9A227] hover:shadow-md"
-      }`}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="font-display mt-0.5 text-base font-semibold text-[#101A33]">{title}</p>
-        <p className="mt-0.5 text-sm text-slate-500">{desc}</p>
-      </div>
-      <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${badgeClass}`}>
-        {STATE_LABEL[state]}
-      </span>
-    </button>
-  );
-}
-
-function IconHand() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M9 11V6a1.5 1.5 0 0 1 3 0v5" strokeLinecap="round" />
-      <path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11" strokeLinecap="round" />
-      <path d="M15 11V6a1.5 1.5 0 0 1 3 0v7c0 3.5-2 6-6 6s-6-2-6-6v-2a1.5 1.5 0 0 1 3 0" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconReceipt() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" strokeLinejoin="round" />
-      <path d="M9 8h6M9 12h6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconBook() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 5.5v16" strokeLinecap="round" />
-    </svg>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${className}`}>
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          state === "done"
+            ? "bg-emerald-500"
+            : state === "pending"
+            ? "bg-amber-500"
+            : state === "revise"
+            ? "bg-red-500"
+            : "bg-slate-400"
+        }`}
+      />
+      {label}
+    </span>
   );
 }

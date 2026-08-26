@@ -130,7 +130,7 @@ export default function PembayaranWisudaPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center text-sm text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F9FB] text-sm text-slate-400">
         Memuat data pembayaran…
       </div>
     );
@@ -140,110 +140,137 @@ export default function PembayaranWisudaPage() {
     !row?.file_bukti_bayar ? "belum_bayar" : row?.status_verifikasi_bayar ?? "menunggu";
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-10">
-      <Stepper current={2} />
-
-      <h1 className="mt-6 text-xl font-semibold text-slate-900">Pembayaran Wisuda</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Unggah bukti pembayaran biaya wisuda. Data akan diverifikasi oleh Admin Keuangan.
-      </p>
-
-      {errorMsg && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMsg}
-        </div>
-      )}
-
-      {status === "terverifikasi" && (
-        <StatusCard
-          tone="success"
-          title="Pembayaran terverifikasi"
-          desc="Bukti pembayaran kamu sudah dicek dan sah. Kamu bisa lanjut ke tahap berikutnya."
-        >
-          <RingkasanBayar row={row!} />
-          <button
-            onClick={() => router.push("/mahasiswa/wisuda/buku-wisuda")}
-            className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+    <div className="min-h-screen bg-[#F8F9FB] font-sans">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4">
+        <p className="text-sm text-slate-500">
+          <span className="text-slate-400">SIAP Wisuda</span>
+          <span className="mx-1.5 text-slate-300">/</span>
+          <span
+            className="cursor-pointer text-slate-400 hover:text-slate-600"
+            onClick={() => router.push("/mahasiswa/wisuda")}
           >
-            Lanjut ke Data Buku Wisuda
-          </button>
-        </StatusCard>
-      )}
-
-      {status === "menunggu" && (
-        <StatusCard
-          tone="pending"
-          title="Menunggu verifikasi"
-          desc="Bukti pembayaran sudah kami terima dan sedang dicek oleh Admin Keuangan. Kamu akan mendapat notifikasi setelah diverifikasi."
+            Modul Wisuda
+          </span>
+          <span className="mx-1.5 text-slate-300">/</span>
+          <span className="font-medium text-slate-700">Pembayaran</span>
+        </p>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push("/login");
+          }}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
         >
-          <RingkasanBayar row={row!} />
-        </StatusCard>
-      )}
+          Logout
+        </button>
+      </div>
 
-      {(status === "belum_bayar" || status === "ditolak") && (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          {status === "ditolak" && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <p className="font-medium">Bukti pembayaran sebelumnya ditolak</p>
-              <p className="mt-1">
-                Silakan periksa kembali nominal, tanggal, dan foto/scan bukti transfer, lalu unggah ulang.
-              </p>
-            </div>
-          )}
+      <div className="mx-auto max-w-xl px-6 py-10">
+        <Stepper current={2} />
 
-          <Field label="Nominal Bayar (Rp)">
-            <input
-              type="number"
-              min="0"
-              value={nominal}
-              onChange={(e) => setNominal(e.target.value)}
-              placeholder="contoh: 500000"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-            />
-          </Field>
+        <h1 className="mt-6 text-xl font-semibold text-slate-900">Pembayaran Wisuda</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Unggah bukti pembayaran biaya wisuda. Data akan diverifikasi oleh Admin Keuangan.
+        </p>
 
-          <Field label="Tanggal Bayar">
-            <input
-              type="date"
-              value={tanggalBayar}
-              onChange={(e) => setTanggalBayar(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-            />
-          </Field>
+        {errorMsg && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMsg}
+          </div>
+        )}
 
-          <Field label="Metode / Bank Tujuan">
-            <select
-              value={metodeBayar}
-              onChange={(e) => setMetodeBayar(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+        {status === "terverifikasi" && (
+          <StatusCard
+            tone="success"
+            title="Pembayaran terverifikasi"
+            desc="Bukti pembayaran kamu sudah dicek dan sah. Kamu bisa lanjut ke tahap berikutnya."
+          >
+            <RingkasanBayar row={row!} />
+            <button
+              onClick={() => router.push("/mahasiswa/wisuda/buku-wisuda")}
+              className="mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
-              {METODE_BAYAR.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </Field>
+              Lanjut ke Data Buku Wisuda
+            </button>
+          </StatusCard>
+        )}
 
-          <Field label="Bukti Transfer / Struk Pembayaran">
-            <input
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
-            />
-            <p className="mt-1 text-xs text-slate-400">Format JPG, PNG, atau PDF.</p>
-          </Field>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+        {status === "menunggu" && (
+          <StatusCard
+            tone="pending"
+            title="Menunggu verifikasi"
+            desc="Bukti pembayaran sudah kami terima dan sedang dicek oleh Admin Keuangan. Kamu akan mendapat notifikasi setelah diverifikasi."
           >
-            {saving ? "Menyimpan…" : "Kirim Bukti Pembayaran"}
-          </button>
-        </form>
-      )}
+            <RingkasanBayar row={row!} />
+          </StatusCard>
+        )}
+
+        {(status === "belum_bayar" || status === "ditolak") && (
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+            {status === "ditolak" && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="font-medium">Bukti pembayaran sebelumnya ditolak</p>
+                <p className="mt-1">
+                  Silakan periksa kembali nominal, tanggal, dan foto/scan bukti transfer, lalu unggah ulang.
+                </p>
+              </div>
+            )}
+
+            <Field label="Nominal Bayar (Rp)">
+              <input
+                type="number"
+                min="0"
+                value={nominal}
+                onChange={(e) => setNominal(e.target.value)}
+                placeholder="contoh: 500000"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </Field>
+
+            <Field label="Tanggal Bayar">
+              <input
+                type="date"
+                value={tanggalBayar}
+                onChange={(e) => setTanggalBayar(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </Field>
+
+            <Field label="Metode / Bank Tujuan">
+              <select
+                value={metodeBayar}
+                onChange={(e) => setMetodeBayar(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                {METODE_BAYAR.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Bukti Transfer / Struk Pembayaran">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+              <p className="mt-1 text-xs text-slate-400">Format JPG, PNG, atau PDF.</p>
+            </Field>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {saving ? "Menyimpan…" : "Kirim Bukti Pembayaran"}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -261,15 +288,15 @@ function Stepper({ current }: { current: number }) {
             <div
               className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                 done
-                  ? "bg-slate-900 text-white"
+                  ? "bg-indigo-600 text-white"
                   : active
-                  ? "border-2 border-slate-900 text-slate-900"
+                  ? "border-2 border-indigo-600 text-indigo-600"
                   : "border border-slate-300 text-slate-400"
               }`}
             >
               {done ? "✓" : n}
             </div>
-            <span className={`text-xs ${active ? "font-medium text-slate-900" : "text-slate-400"}`}>
+            <span className={`text-xs ${active ? "font-medium text-indigo-600" : "text-slate-400"}`}>
               {s}
             </span>
             {i < steps.length - 1 && <div className="h-px w-6 bg-slate-200" />}
@@ -303,7 +330,7 @@ function StatusCard({
   const toneClasses =
     tone === "success"
       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : "border-blue-200 bg-blue-50 text-blue-800";
+      : "border-indigo-200 bg-indigo-50 text-indigo-800";
   return (
     <div className={`mt-6 rounded-xl border px-5 py-4 ${toneClasses}`}>
       <p className="font-medium">{title}</p>
