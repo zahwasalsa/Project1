@@ -15,9 +15,11 @@ type WisudaRow = {
   bersedia_hadir: boolean | null;
   nominal: number | null;
   file_bukti_bayar: string | null;
-  status_verifikasi_bayar: "menunggu" | "ditolak" | "terverifikasi" | null;
+  status_verifikasi_bayar: "menunggu" | "ditolak" | "diterima" | null;
   file_foto: string | null;
   status_validasi_buku: "menunggu" | "revisi" | "lengkap" | null;
+  status_akhir_wisuda: "terdaftar_wisudawan" | "in_absentia" | null;
+  finalized_at: string | null;
 };
 
 type StepState = "locked" | "todo" | "pending" | "revise" | "done";
@@ -45,7 +47,7 @@ export default function WisudaOverviewPage() {
       supabase
         .from("wisuda")
         .select(
-          "bersedia_hadir, nominal, file_bukti_bayar, status_verifikasi_bayar, file_foto, status_validasi_buku"
+          "bersedia_hadir, nominal, file_bukti_bayar, status_verifikasi_bayar, file_foto, status_validasi_buku, status_akhir_wisuda, finalized_at"
         )
         .eq("mahasiswa_id", auth.user.id)
         .maybeSingle(),
@@ -80,7 +82,7 @@ export default function WisudaOverviewPage() {
       ? "locked"
       : !row?.file_bukti_bayar
       ? "todo"
-      : row?.status_verifikasi_bayar === "terverifikasi"
+      : row?.status_verifikasi_bayar === "diterima"
       ? "done"
       : row?.status_verifikasi_bayar === "ditolak"
       ? "revise"
@@ -161,6 +163,36 @@ export default function WisudaOverviewPage() {
             )}
           </div>
         </div>
+
+        {/* Badge status akhir wisuda */}
+        {row?.status_akhir_wisuda && (
+          <div
+            className={`mb-6 rounded-xl border px-6 py-4 ${
+              row.status_akhir_wisuda === "terdaftar_wisudawan"
+                ? "border-emerald-200 bg-emerald-50"
+                : "border-slate-300 bg-slate-100"
+            }`}
+          >
+            <p
+              className={`text-base font-semibold ${
+                row.status_akhir_wisuda === "terdaftar_wisudawan" ? "text-emerald-700" : "text-slate-700"
+              }`}
+            >
+              {row.status_akhir_wisuda === "terdaftar_wisudawan"
+                ? "🎓 Kamu terdaftar sebagai Wisudawan"
+                : "Status Wisuda: In Absentia"}
+            </p>
+            {row.finalized_at && (
+              <p className="mt-1 text-xs text-slate-500">
+                Ditetapkan pada{" "}
+                {new Date(row.finalized_at).toLocaleString("id-ID", {
+                  dateStyle: "long",
+                  timeStyle: "short",
+                })}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Table */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
