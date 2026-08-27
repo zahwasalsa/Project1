@@ -17,6 +17,7 @@ export default function Modul2WizardPage() {
   const [statusLamaran, setStatusLamaran] = useState('diproses')
   const [jumlahLamaran, setJumlahLamaran] = useState(0)
   const [threshold, setThreshold] = useState(5)
+  const [dibypassAdmin, setDibypassAdmin] = useState(false)
 
   // state bukti kerja
   const [namaPerusahaan, setNamaPerusahaan] = useState('')
@@ -111,6 +112,32 @@ export default function Modul2WizardPage() {
       setLoading(false)
     }
   }
+
+  // ================= Cek Status Hiring (deteksi Bypass Admin) =================
+  // Dipakai supaya mahasiswa jalur Belum Bekerja otomatis bisa lanjut kalau admin
+  // melakukan bypass syarat threshold (Bagian 9b), tanpa harus submit lamaran lagi.
+  const cekStatusHiring = async () => {
+    try {
+      const res = await fetch(`/api/modul2/status/${mahasiswaId}`)
+      const data = await res.json()
+      if (!res.ok) return
+      if (data.data?.status_modul2 === 'bypass_admin_hiring') {
+        setDibypassAdmin(true)
+        setTimeout(() => setStep(3), 1200)
+      } else if (data.data?.status_modul2 === 'memenuhi_syarat_hiring') {
+        setStep(3)
+      }
+    } catch {
+      // diamkan, biarkan auto-poll coba lagi
+    }
+  }
+
+  useEffect(() => {
+    if (step !== 2 || statusPekerjaan !== 'belum_bekerja') return
+    const interval = setInterval(cekStatusHiring, 5000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, statusPekerjaan, mahasiswaId])
 
   // ================= STEP 2B: Bukti Kerja =================
   const submitBuktiKerja = async () => {
@@ -216,6 +243,7 @@ export default function Modul2WizardPage() {
   const statusLabel: Record<string, string> = {
     proses_hiring: 'Proses Hiring (Belum Capai Threshold)',
     memenuhi_syarat_hiring: 'Memenuhi Syarat Hiring',
+    bypass_admin_hiring: 'Syarat Hiring Dilewati (Bypass Admin)',
     menunggu_verifikasi_bukti_kerja: 'Menunggu Verifikasi Bukti Kerja',
     revisi_bukti_kerja: 'Revisi Bukti Kerja',
     bukti_kerja_terverifikasi: 'Bukti Kerja Terverifikasi',
@@ -294,6 +322,11 @@ export default function Modul2WizardPage() {
         {step === 2 && statusPekerjaan === 'belum_bekerja' && (
           <div className="space-y-4">
             <h1 className="text-xl font-bold text-white">Form Lamaran Kerja</h1>
+            {dibypassAdmin && (
+              <div className="rounded-lg bg-blue-950 border border-blue-900 text-blue-300 text-sm px-3 py-2">
+                Admin telah melewati syarat jumlah lamaran (Bypass Admin). Mengalihkan ke Tracer Study...
+              </div>
+            )}
             <p className="text-gray-400 text-sm">
               Progress: {jumlahLamaran} / {threshold} lamaran
             </p>
